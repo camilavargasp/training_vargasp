@@ -1,0 +1,10 @@
+---
+title: "Intro to Data Viz"
+format: html
+---
+
+## Set up
+```{r}
+
+```
+
