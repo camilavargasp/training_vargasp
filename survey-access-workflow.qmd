@@ -1,0 +1,170 @@
+---
+title: "Reproducible Survey Access"
+format: html
+---
+
+## Set up
+
+```{r}
+library(qualtRics)
+library(tidyr)
+library(knitr)
+library(ggplot2)
+library(readr)
+library(kableExtra)
+library(dplyr)
+```
+
+
+Read in API key
+
+```{r}
+key_file <- read_lines("/tmp/qualtrics-key.txt")
+
+qualtrics_api_credentials(api_key = key_file, base_url = "ucsb.co1.qualtrics.com", install = FALSE, overwrite = TRUE)
+```
+
+## Read in surveys
+
+```{r}
+surveys <- all_surveys()
+
+kable(surveys) %>% 
+  kable_styling()
+
+```
+
+
+selecting the survey we want to work with
+
+```{r}
+i <- which(surveys$name == "Survey for Data Science Training")
+
+id <- surveys$id[i]
+
+
+```
+
+Getting Questions using survey ID
+
+```{r}
+questions <- survey_questions(id)
+
+kable(questions) %>% 
+  kable_styling()
+
+
+```
+
+
+Getting survey responses
+
+```{r}
+survey_results <- fetch_survey(id)
+
+glimpse(survey_results)
+
+
+```
+
+
+## Responses to Q2
+
+```{r}
+q2 <- survey_results %>% 
+  select(Q2) %>% 
+  group_by(Q2) %>% 
+  summarise(n = n()) %>% 
+  mutate(Q2 = as.character(Q2),
+         Q2 = if_else(is.na(Q2), "Missing Reponse", Q2))
+
+
+kable(q2, col.names = c("How long have you been programming", "Number of responses")) %>% 
+  kable_styling()
+
+```
+
+## Question 3
+
+```{r}
+q3 <- survey_results %>% 
+  select(Q3) %>% 
+  group_by(Q3) %>% 
+  summarise(n = n())
+
+
+ggplot(q3,
+       aes(x = Q3, 
+           y = n))+
+  geom_col()+
+  labs(x = "What language do you currently use most frequently?")+
+  theme_minimal()
+
+
+q3_text <- survey_results %>% 
+  select(Q3_7_TEXT) %>% 
+  drop_na()
+
+
+kable(q3_text, col.names = "Other responses to What language do you currently use most frequently") %>% 
+  kable_styling()
+
+```
+
+
+Other apporach to Q3
+
+```{r}
+q3_complete <- survey_results %>% 
+  select(Q3)
+
+q3_text_coplete <- survey_results %>% 
+  select(Q3_7_TEXT) %>% 
+  rename(Q3 = Q3_7_TEXT) %>% 
+  drop_na()
+
+q3_all <- bind_rows(q3_complete, q3_text_coplete) %>% 
+  group_by(Q3) %>% 
+  summarise(n = n())
+
+ggplot(q3_all,
+       aes(x = Q3, 
+           y = n))+
+  geom_col()+
+  labs(x = "What language do you currently use most frequently?")+
+  theme_minimal()
+
+```
+
+## Google Forms
+
+```{r}
+library(googlesheets4)
+```
+
+Read google form results from google sheet
+
+```{r}
+responses <- read_sheet("https://docs.google.com/spreadsheets/d/1CSG__ejXQNZdwXc1QK8dKouxphP520bjUOnZ5SzOVP8/edit?usp=sharing")
+
+
+glimpse(responses)
+
+```
+
+```{r}
+questions <- colnames(responses)[2:5]
+
+names(questions) <- paste0("Q", seq(1,4))
+
+questions
+
+colnames(responses) <- c("Timestamp", names(questions))
+
+glimpse(responses)
+
+
+```
+
+
+

@@ -1,0 +1,63 @@
+---
+title: "Spatial Data"
+format: html
+---
+
+```{r}
+# General Packages
+library(tidyr)     # data wrangling
+library(dplyr)     # data wrangling
+library(readr)     # read in files
+library(ggplot2)   # plotting and mapping
+library(patchwork) # combining maps/plots
+library(cowplot)   # combining plots to make an inset map
+
+# Spatial Packages
+library(sf)        # manipulating spatial data
+library(ggspatial) # retrieving basemap, adding scale and arrowbar
+library(maptiles)  # retrieving basemap
+library(terra)     # working with raster data
+library(tidyterra) # functions for working with raster
+
+# Data 
+library(tigris)  # shapefiles with various administrative boundaries and roads
+```
+
+
+
+```{r}
+# read in data from .csv file
+site_df <- read_csv("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/urn%3Auuid%3A7161c08c-79b7-4970-94b4-7d6e4fcfcc03")
+
+
+site_df <- site_df %>% 
+    select(state, desert, site_code, long, lat, ndvi_2023, MAT, MAP) 
+
+```
+
+
+```{r}
+# read in data from shapefile
+ecoreg_sf <- sf::read_sf("data/ca_eco_l3.shp")
+```
+
+
+
+```{r}
+# read in data using package 
+states_sf <- tigris::states(progress_bar = FALSE)
+CA_counties_sf <- tigris::counties(state = "CA", progress_bar = FALSE)
+```
+
+
+```{r}
+# The coordinate information is in the "long" and "lat column
+site_sf <- site_df %>% 
+  st_as_sf(
+    coords = c("long", "lat"), # specify where spatial data is; "longitude" is first
+    crs    = "EPSG:4326"      # need to tell it what the CRS is
+  )
+```
+
+
+
